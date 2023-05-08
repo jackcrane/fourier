@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Canvas Demo</title>
+  </head>
+  <body>
+    <div style="display: flex; flex-direction: row; gap: 10px">
+      <div>
+        <canvas
+          id="myCanvas"
+          width="600"
+          height="600"
+          style="border: 1px solid black"
+        ></canvas>
+        <p><span id="ptcount">0</span> points</p>
+      </div>
+      <div
+        style="
+          max-height: 600px;
+          overflow: auto;
+          border: 1px solid black;
+          width: 300px;
+        "
+      >
+        <ul id="list"></ul>
+      </div>
+    </div>
+    <script>
+      const canvas = document.getElementById("myCanvas");
+      const context = canvas.getContext("2d");
+      let isDrawing = false;
+      let points = [];
+
+      const renderPointList = () => {
+        const list = document.getElementById("list");
+        list.innerHTML = "";
+        for (let i = points.length - 1; i >= 0; i--) {
+          const li = document.createElement("li");
+          li.innerHTML = `(${points[i][0]}, ${points[i][1]})`;
+          list.appendChild(li);
+        }
+        document.getElementById("ptcount").innerHTML = points.length;
+      };
+
+      canvas.addEventListener("mousedown", (event) => {
+        isDrawing = true;
+        points.push([event.offsetX, event.offsetY]);
+        renderPointList();
+        context.beginPath();
+        context.moveTo(event.offsetX, event.offsetY);
+      });
+
+      canvas.addEventListener("mousemove", (event) => {
+        if (isDrawing) {
+          points.push([event.offsetX, event.offsetY]);
+          renderPointList();
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.beginPath();
+          context.moveTo(points[0][0], points[0][1]);
+          for (let i = 1; i < points.length; i++) {
+            context.lineTo(points[i][0], points[i][1]);
+          }
+          context.lineTo(event.offsetX, event.offsetY);
+          context.stroke();
+        }
+      });
+
+      canvas.addEventListener("mouseup", (event) => {
+        if (isDrawing) {
+          isDrawing = false;
+          points.push(points[0]);
+          context.lineTo(points[0][0], points[0][1]);
+          context.stroke();
+          const jsonData = JSON.stringify(points);
+          const blob = new Blob([jsonData], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "points.json";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          points = [];
+        }
+      });
+    </script>
+  </body>
+</html>
